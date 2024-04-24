@@ -1,0 +1,15 @@
+*.exe
+*.ilk
+*.pdb
+*.bak
+*.dll
+*.exp
+*.lib
+_genc/*
+_си/*
+тт/*
+модули/*
+x.*
+*.tri!
+_totri.cfg
+
