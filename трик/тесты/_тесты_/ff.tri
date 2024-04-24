@@ -1,0 +1,68 @@
+модуль просто_пока
+
+фн foo(c: Цел64,c1: Цел64): Цел64 {
+    c++
+    вернуть c
+}
+
+
+
+
+
+
+
+ //(If (BinaryExpr "Лог" (IdentExpr "Цел64" "x") (Op 31) (LiteralExpr "Цел64" RO (Kind 0) "" [])) (StatementSeq [(AssignStatement (IdentExpr "Цел64" "x") (LiteralExpr "Цел64" RO (Kind 0) "" []))]) (If (BinaryExpr "Лог" (IdentExpr "Цел64" "x") (Op 31) (LiteralExpr "Цел64" RO (Kind 0) "" [])) (StatementSeq [(AssignStatement (IdentExpr "Цел64" "x") (LiteralExpr "Цел64" RO (Kind 0) "" []))]) (StatementSeq [(AssignStatement (IdentExpr "Цел64" "x") (LiteralExpr "Цел64" RO (Kind 0) "" []))])))
+
+ /*
+    пусть x2: Вещ64 := 5.5 // TFloat64
+    x2 := 5.2
+
+
+        пусть x4: Лог := истина // TBool
+        пусть x5: Лог := истина // TBool
+        если x1 <= 1 { x4 := истина }
+    пусть x3: Слово64 := 5 // TWord64
+    пусть x4: Лог := ложь // TBool
+    пусть x5: Символ := 'b' // TSymbol
+    пусть x6: Строка := "c" // TString
+
+    //пусть x7: Строка8 := 'd' // TString
+    //пусть x8: Пусто := 5 // TNull
+}
+*/
+
+/*
+/*вывод(
+120
+)
+*/
+модуль x
+(Module "x" [] [(Function "I" "functype" (StatementSeq [(Return (TypeRef "Цел64" Resolved) (IdentExpr "Цел64" "c"))] ))] (EntryFn (StatementSeq [(DeclStatement (VarDecl "x" "Цел64" (LiteralExpr "Цел64" RO (Kind 0) "" [])))] )) )
+(Module "x" [] [] (EntryFn (StatementSeq [(DeclStatement (VarDecl "x" "Цел64" (LiteralExpr "Цел64" RO (Kind 0) "" [])))] )) )
+(Module "x" [] [] (EntryFn (StatementSeq [(DeclStatement (VarDecl "x" "Цел64" (LiteralExpr "Цел64" RO (Kind 0) "" []))) (AssignStatement (IdentExpr "Цел64" "x") (LiteralExpr "Цел64" RO (Kind 0) "" []))] )) )
+(Module "x" [] [(Function "ff" "functype" (StatementSeq [(IncStatement (IdentExpr "Цел64" "c")) (Return (TypeRef "Цел64" Resolved) (IdentExpr "Цел64" "c"))] ))] (EntryFn (StatementSeq [(DeclStatement (VarDecl "x" "Цел64" (LiteralExpr "Цел64" RO (Kind 0) "" [])))] )) )
+
+импорт "стд::вывод"
+
+
+вход {
+    конст
+}
+конст к1: Цел64 = 1
+
+
+тип human = класс {
+    age: Цел64 = позже
+    height := 0
+}
+
+тип chimken = класс (human) {
+
+}
+
+    /*пусть числа = Числа[9, 8, 7]
+    цикл x среди числа {
+        //вывод.ф("$ ", x)
+        пусть x1 := x
+    }*/
+*/

@@ -1,0 +1,17 @@
+struct {int64 i, float64 f) stack [DEPTH];
+
+.ADDI:
+#run
+    Push(Pop() + Pop())
+#vis
+    return "addi"
+#bin
+    bytes[ip] = C_ADDI; ip++
+    
+    
+C_ADDI: COD{"addi", 0 }    
+
+C_LI8: COD{"li8", A[INT8, 1]} 
+C_LI64: COD{"addi", A[] }
+    
+    
