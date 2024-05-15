@@ -64,6 +64,12 @@ func (genc *genContext) g(format string, args ...interface{}) {
 	genc.globals = append(genc.globals, fmt.Sprintf(format, args...))
 }
 
+func (genc *genContext) newRegister() int {
+	var ret = genc.registerCnt
+	genc.registerCnt++
+	return ret
+}
+
 func (genc *genContext) finishCode() {
 	var hname = fmt.Sprintf("_%s_H", genc.outname)
 

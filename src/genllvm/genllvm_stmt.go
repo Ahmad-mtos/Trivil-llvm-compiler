@@ -3,7 +3,7 @@ package genllvm
 import (
 	"fmt"
 	"strings"
-
+	"strconv"
 	"trivil/ast"
 	"trivil/env"
 )
@@ -38,12 +38,12 @@ func (genc *genContext) genStatement(s ast.Statement) {
 	case *ast.DecStatement:
 		l := genc.genExpr(x.L)
 		genc.c("%s--;", l)
-	case *ast.If:
-		genc.genIf(x, -1)
-	case *ast.While:
+	case *ast.If:  // DONE
+		genc.genIf(x)
+	case *ast.While: // DONE
 		genc.genWhile(x)
-	case *ast.Cycle:
-		genc.genCycle(x)
+	// case *ast.Cycle:
+	// 	genc.genCycle(x)
 	case *ast.Guard:
 		genc.genGuard(x)
 	case *ast.Select:
@@ -56,19 +56,10 @@ func (genc *genContext) genStatement(s ast.Statement) {
 		}
 	case *ast.SelectType:
 		genc.genSelectType(x)
-	case *ast.Return:
-		if x.X != nil {
-			var xType = x.X.GetType()
-			genc.genExpr(x.X)
-			genc.c("ret %s %d", xType, genc.registerCnt - 1)
-		} else {
-			// CHANGER HERE: CHECK LATER
-			genc.c("ret i32 0")
-		}
-	case *ast.Break:
-		// CHANGE HERE: definitly wrong, I need to get the break register label from the while or the something that's above it.
-		genc.c("br label %%%d\n%d:", genc.registerCnt, genc.registerCnt)
-		genc.registerCnt++
+	case *ast.Return: // DONE
+		genc.genReturn(x)
+	case *ast.Break: // DONE
+		genc.genBreak()
 	case *ast.Crash:
 		genc.genCrash(x)
 
@@ -85,56 +76,54 @@ func (genc *genContext) assignCast(lt, rt ast.Type) string {
 	return ""
 }
 
-func (genc *genContext) genIf(x *ast.If, restLabel int) {
+func (genc *genContext) genReturn(x *ast.Return) {
+	for (TopScope.ScopeType != FuncScope) {
+		popScope()
+	}
+	
+	if x.X != nil {
+		var xType = x.X.GetType()
+		genc.genExpr(x.X)
+		genc.c("ret %s %d", xType, genc.registerCnt - 1)
+	} else {
+		genc.c("ret i32 0")
+	}
+
+	popScope()
+}
+
+func (genc *genContext) genBreak () {
+	for (TopScope.ScopeType != LoopScope) {
+		popScope()
+	}
+
+	var restRegister = TopScope.EndLabel
+	genc.c("br label %%%s", restRegister)
+
+	popScope()
+}
+
+func (genc *genContext) genIf(x *ast.If) {
 	genc.genExpr(x.Cond)
 	var condExpr = genc.registerCnt - 1
-	var exprTrue = genc.registerCnt
-	var exprFalse = genc.registerCnt + 1
-	var restRegister = genc.registerCnt + 2
-	if (restLabel != -1) {
-		restRegister = restLabel
-	}
-	genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
+	var exprTrue = genc.newRegister()
+	var exprFalse = genc.newRegister()
+	var restRegister = genc.newRegister()
+
+	pushScope(IfScope, "", strconv.Itoa(restRegister))
+
+    genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
 	
-	// CHANGE HERE: might be +2 if restLabel isn't -1
-	genc.registerCnt += 3
 
 	genc.c("%d:", exprTrue)
 	genc.genStatementSeq(x.Then)
 	genc.c("br label %%%d", restRegister)
 
 	genc.c("%d:", exprFalse)
-	if x.Else != nil {
-		elsif, ok := x.Else.(*ast.If)
-		if (ok){
-			genc.genIf(elsif, restRegister)
-		} else {
-			genc.genStatementSeq(x.Else.(*ast.StatementSeq))
-			genc.c("br label %%%d", restRegister)
-		}
-	} else {
-		genc.c("br label %%%d", restRegister)
-	}
+	genc.genStatement(x.Else)
+	genc.c("br label %%%d", restRegister)
 
-	if (restLabel != -1){
-		genc.c("%d:", restRegister)
-	}
-	/*
-	genc.c("%sif (%s) {", prefix, removeExtraPars(genc.genExpr(x.Cond)))
-	genc.genStatementSeq(x.Then)
-	genc.c("}")
-	if x.Else != nil {
-
-		elsif, ok := x.Else.(*ast.If)
-		if ok {
-			genc.genIf(elsif, "else ")
-		} else {
-			genc.c("else {")
-			genc.genStatementSeq(x.Else.(*ast.StatementSeq))
-			genc.c("}")
-		}
-	}
-	*/
+	genc.c("%d:", restRegister)
 }
 
 func removeExtraPars(s string) string {
@@ -148,15 +137,17 @@ func removeExtraPars(s string) string {
 }
 
 func (genc *genContext) genWhile(x *ast.While) {
-	var condition = genc.registerCnt
-	genc.registerCnt++
+	var condition = genc.newRegister()
+	genc.c("br label %%%d", condition)
 	genc.c("%d:", condition)
 
 	genc.genExpr(x.Cond)
 	var condExpr = genc.registerCnt - 1
-	var exprTrue = genc.registerCnt
-	var exprFalse = genc.registerCnt + 1
-	genc.registerCnt += 2
+	var exprTrue = genc.newRegister()
+	var exprFalse = genc.newRegister()
+
+	pushScope(LoopScope, strconv.Itoa(condition), strconv.Itoa(exprFalse))
+
 	genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
 
 	genc.c("%d:", exprTrue)
@@ -164,11 +155,7 @@ func (genc *genContext) genWhile(x *ast.While) {
 	genc.c("br label %%%d", condition)
 
 	genc.c("%d:", exprFalse)
-
-	/*
-	genc.c("while (%s) {", removeExtraPars(genc.genExpr(x.Cond)))
-	genc.genStatementSeq(x.Seq)
-	genc.c("}")*/
+	popScope()
 }
 
 func (genc *genContext) genCycle(x *ast.Cycle) {
@@ -341,18 +328,24 @@ func (genc *genContext) genSelectAsIfs(x *ast.Select) {
 }
 
 func (genc *genContext) genPredicateSelect(x *ast.Select) {
-
-	var els = ""
+	// we need to fix last exprFalse to point to next case instead 
+	
+	var restRegister = genc.newRegister()
 	for _, c := range x.Cases {
-
-		var conds = make([]string, 0)
-		for _, e := range c.Exprs {
-			conds = append(conds, removeExtraPars(genc.genExpr(e)))
+		var exprTrue = genc.newRegister()
+		var exprFalse = 0
+		for idx, e := range c.Exprs {
+			var condExpr = genc.genExpr(e)
+			if (idx != 0) {
+				genc.c("%d:", exprFalse)
+			}
+			exprFalse = genc.newRegister()
+			genc.c("br i1 %%%s, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
 		}
-		genc.c("%sif (%s) {", els, strings.Join(conds, " || "))
-		els = "else "
+
+		genc.c("%d:", exprTrue)
 		genc.genStatementSeq(c.Seq)
-		genc.c("}")
+		genc.c("br label %%%d", restRegister)
 	}
 
 	if x.Else != nil {
@@ -360,6 +353,27 @@ func (genc *genContext) genPredicateSelect(x *ast.Select) {
 		genc.genStatementSeq(x.Else)
 		genc.c("}")
 	}
+}
+
+func (genc *genContext) genIff(x *ast.If) {
+	genc.genExpr(x.Cond)
+	var condExpr = genc.registerCnt - 1
+	var exprTrue = genc.newRegister()
+	var exprFalse = genc.newRegister()
+	var restRegister = genc.newRegister()
+
+    genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
+	
+
+	genc.c("%d:", exprTrue)
+	genc.genStatementSeq(x.Then)
+	genc.c("br label %%%d", restRegister)
+
+	genc.c("%d:", exprFalse)
+	genc.genStatement(x.Else)
+	genc.c("br label %%%d", restRegister)
+
+	genc.c("%d:", restRegister)
 }
 
 //==== оператор выбора по типу

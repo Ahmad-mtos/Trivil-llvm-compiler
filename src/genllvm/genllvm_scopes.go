@@ -58,7 +58,6 @@ func addToScope(name string, data SymbolData) {
 }
 
 func findInScopes(name string) *SymbolData {
-
 	var cur = TopScope
 
 	for {
