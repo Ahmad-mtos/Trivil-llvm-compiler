@@ -44,24 +44,24 @@ func (genc *genContext) genStatement(s ast.Statement) {
 		genc.genWhile(x)
 	// case *ast.Cycle:
 	// 	genc.genCycle(x)
-	case *ast.Guard:
-		genc.genGuard(x)
+	// case *ast.Guard:
+		// genc.genGuard(x)
 	case *ast.Select:
 		if canSelectAsSwitch(x) {
-			genc.genSelectAsSwitch(x)
+			//genc.genSelectAsSwitch(x)
 		} else if x.X == nil {
 			genc.genPredicateSelect(x)
 		} else {
-			genc.genSelectAsIfs(x)
+			//genc.genSelectAsIfs(x)
 		}
-	case *ast.SelectType:
-		genc.genSelectType(x)
+	// case *ast.SelectType:
+		// genc.genSelectType(x)
 	case *ast.Return: // DONE
 		genc.genReturn(x)
 	case *ast.Break: // DONE
 		genc.genBreak()
-	case *ast.Crash:
-		genc.genCrash(x)
+	// case *ast.Crash:
+		// genc.genCrash(x)
 
 	default:
 		panic(fmt.Sprintf("gen statement: ni %T", s))
@@ -83,8 +83,17 @@ func (genc *genContext) genReturn(x *ast.Return) {
 	
 	if x.X != nil {
 		var xType = x.X.GetType()
-		genc.genExpr(x.X)
-		genc.c("ret %s %d", xType, genc.registerCnt - 1)
+		var expr = genc.genExpr(x.X)
+		switch {
+		case ast.IsInt64(xType), ast.IsWord64(xType):
+			genc.c("ret i64 %s", expr)
+		case ast.IsFloatType(xType):
+			genc.c("ret double %s", expr)
+		case ast.IsBoolType(xType):
+			genc.c("ret i8 %s", expr)
+		default:
+			panic(fmt.Sprintf("genReturn: type not supported %d", 10200))
+		}
 	} else {
 		genc.c("ret i32 0")
 	}
@@ -104,15 +113,14 @@ func (genc *genContext) genBreak () {
 }
 
 func (genc *genContext) genIf(x *ast.If) {
-	genc.genExpr(x.Cond)
-	var condExpr = genc.registerCnt - 1
+	var condExpr = genc.genExpr(x.Cond)
 	var exprTrue = genc.newRegister()
 	var exprFalse = genc.newRegister()
 	var restRegister = genc.newRegister()
 
 	pushScope(IfScope, "", strconv.Itoa(restRegister))
 
-    genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
+    genc.c("br i1 %s, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
 	
 
 	genc.c("%d:", exprTrue)
@@ -141,14 +149,14 @@ func (genc *genContext) genWhile(x *ast.While) {
 	genc.c("br label %%%d", condition)
 	genc.c("%d:", condition)
 
-	genc.genExpr(x.Cond)
-	var condExpr = genc.registerCnt - 1
+	
+	var condExpr = genc.genExpr(x.Cond)
 	var exprTrue = genc.newRegister()
 	var exprFalse = genc.newRegister()
 
 	pushScope(LoopScope, strconv.Itoa(condition), strconv.Itoa(exprFalse))
 
-	genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
+	genc.c("br i1 %s, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
 
 	genc.c("%d:", exprTrue)
 	genc.genStatementSeq(x.Seq)
@@ -328,50 +336,36 @@ func (genc *genContext) genSelectAsIfs(x *ast.Select) {
 }
 
 func (genc *genContext) genPredicateSelect(x *ast.Select) {
-	// we need to fix last exprFalse to point to next case instead 
-	
 	var restRegister = genc.newRegister()
-	for _, c := range x.Cases {
+	var exprFalse = 0
+	for caseIdx, c := range x.Cases {
 		var exprTrue = genc.newRegister()
-		var exprFalse = 0
 		for idx, e := range c.Exprs {
 			var condExpr = genc.genExpr(e)
+			// to branch to either the statement sequence or next expression
 			if (idx != 0) {
 				genc.c("%d:", exprFalse)
 			}
 			exprFalse = genc.newRegister()
 			genc.c("br i1 %%%s, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
 		}
-
 		genc.c("%d:", exprTrue)
 		genc.genStatementSeq(c.Seq)
 		genc.c("br label %%%d", restRegister)
+		
+		// to branch to the next case.
+		if caseIdx != len(x.Cases) - 1 {
+			genc.c("%d:", exprFalse)
+		}
 	}
-
-	if x.Else != nil {
-		genc.c("else {")
-		genc.genStatementSeq(x.Else)
-		genc.c("}")
-	}
-}
-
-func (genc *genContext) genIff(x *ast.If) {
-	genc.genExpr(x.Cond)
-	var condExpr = genc.registerCnt - 1
-	var exprTrue = genc.newRegister()
-	var exprFalse = genc.newRegister()
-	var restRegister = genc.newRegister()
-
-    genc.c("br i1 %%%d, label %%%d, label %%%d", condExpr, exprTrue, exprFalse)
-	
-
-	genc.c("%d:", exprTrue)
-	genc.genStatementSeq(x.Then)
-	genc.c("br label %%%d", restRegister)
 
 	genc.c("%d:", exprFalse)
-	genc.genStatement(x.Else)
-	genc.c("br label %%%d", restRegister)
+	if x.Else != nil {
+		genc.genStatementSeq(x.Else)
+		genc.c("br label %%%d", restRegister)
+	} else {
+		genc.c("br label %%%d", restRegister)
+	}
 
 	genc.c("%d:", restRegister)
 }
