@@ -2,10 +2,10 @@ package genllvm
 
 import (
 	"fmt"
-	"strings"
+	// "strings"
 	"strconv"
 	"trivil/ast"
-	"trivil/env"
+	// "trivil/env"
 )
 
 var _ = fmt.Printf
@@ -19,9 +19,8 @@ func (genc *genContext) genStatementSeq(seq *ast.StatementSeq) {
 
 func (genc *genContext) genStatement(s ast.Statement) {
 	switch x := s.(type) {
-	case *ast.DeclStatement:
-		s := genc.genLocalDecl(x.D)
-		genc.c("%s", s)
+	case *ast.DeclStatement: // DONE
+		genc.genLocalDecl(x.D)
 	case *ast.ExprStatement:
 		s := genc.genExpr(x.X)
 		genc.c("%s;", s)
@@ -69,10 +68,6 @@ func (genc *genContext) genStatement(s ast.Statement) {
 }
 
 func (genc *genContext) assignCast(lt, rt ast.Type) string {
-
-	if ast.UnderType(lt) != ast.UnderType(rt) {
-		return "(" + genc.typeRef(lt) + ")"
-	}
 	return ""
 }
 
@@ -168,80 +163,21 @@ func (genc *genContext) genWhile(x *ast.While) {
 
 func (genc *genContext) genCycle(x *ast.Cycle) {
 
-	var index = ""
-	if x.IndexVar != nil {
-		index = genc.declName(x.IndexVar)
-	} else {
-		index = genc.localName("i")
-	}
-
-	if ast.IsVariadicType(x.Expr.GetType()) {
-		// нельзя использовать временную переменную
-		panic("не реализовано для вариативных")
-	}
-
-	var loc = genc.localName("")
-	genc.c("%s %s = %s;", genc.typeRef(x.Expr.GetType()), loc, genc.genExpr(x.Expr))
-
-	genc.c("for (%s %s = 0;%s < %s;%s++) {",
-		predefinedTypeName(ast.Int64.Name),
-		index,
-		index,
-		genc.genLen(loc, x.Expr.GetType()),
-		index)
-
-	if x.ElementVar != nil {
-		genc.c("%s %s = %s;",
-			genc.typeRef(x.ElementVar.Typ),
-			genc.declName(x.ElementVar),
-			genc.genForElementSet(x.Expr.GetType(), loc, index))
-	}
-	genc.genStatementSeq(x.Seq)
-	genc.c("}")
 }
 
 func (genc *genContext) genForElementSet(arrayType ast.Type, array string, index string) string {
-	switch xt := ast.UnderType(arrayType).(type) {
-	case *ast.VectorType:
-		return fmt.Sprintf("%s->body[%s]", array, index)
-	case *ast.VariadicType:
-		panic("ni")
-	default:
-		if xt == ast.String8 {
-			return fmt.Sprintf("%s->body[%s]", array, index)
-		}
-		panic("assert")
-	}
-
+	return ""
 }
 
 func (genc *genContext) genGuard(x *ast.Guard) {
-	genc.c("if (!(%s)) {", removeExtraPars(genc.genExpr(x.Cond)))
-	seq, ok := x.Else.(*ast.StatementSeq)
-	if ok {
-		genc.genStatementSeq(seq)
-	} else {
-		genc.genStatement(x.Else)
-	}
-	genc.c("}")
 }
 
 func (genc *genContext) genCrash(x *ast.Crash) {
 
-	var expr string
-	var li = literal(x.X)
-	if li != nil {
-		expr = "\"" + encodeLiteralString(li.StrVal) + "\""
-	} else {
-		expr = genc.genExpr(x.X) + "->body"
-	}
-
-	genc.c("%s((char *)%s,%s);", rt_crash, expr, genPos(x.Pos))
 }
 
 func genPos(pos int) string {
-	src, line, col := env.SourcePos(pos)
-	return fmt.Sprintf("\"%s/%s:%d:%d\"", src.OriginPath, src.FileName, line, col)
+	return ""
 }
 
 func literal(expr ast.Expr) *ast.LiteralExpr {
@@ -283,56 +219,12 @@ func canSelectAsSwitch(x *ast.Select) bool {
 }
 
 func (genc *genContext) genSelectAsSwitch(x *ast.Select) {
-	genc.c("switch (%s) {", genc.genExpr(x.X))
 
-	for _, c := range x.Cases {
-		for _, e := range c.Exprs {
-			genc.c("case %s: ", genc.genExpr(e))
-		}
-		genc.c("{") // for clang 15.0.7 on linux
-		genc.genStatementSeq(c.Seq)
-		genc.c("}")
-		genc.c("break;")
-	}
-
-	if x.Else != nil {
-		genc.c("default:{")
-		genc.genStatementSeq(x.Else)
-		genc.c("}");
-	}
-
-	genc.c("}")
 }
 
 func (genc *genContext) genSelectAsIfs(x *ast.Select) {
 
-	var strCompare = ast.IsStringType(x.X.GetType())
 
-	var loc = genc.localName("")
-	genc.c("%s %s = %s;", genc.typeRef(x.X.GetType()), loc, genc.genExpr(x.X))
-
-	var els = ""
-	for _, c := range x.Cases {
-
-		var conds = make([]string, 0)
-		for _, e := range c.Exprs {
-			if strCompare {
-				conds = append(conds, fmt.Sprintf("%s(%s, %s)", rt_equalStrings, loc, genc.genExpr(e)))
-			} else {
-				conds = append(conds, fmt.Sprintf("%s == %s", loc, genc.genExpr(e)))
-			}
-		}
-		genc.c("%sif (%s) {", els, strings.Join(conds, " || "))
-		els = "else "
-		genc.genStatementSeq(c.Seq)
-		genc.c("}")
-	}
-
-	if x.Else != nil {
-		genc.c("else {")
-		genc.genStatementSeq(x.Else)
-		genc.c("}")
-	}
 }
 
 func (genc *genContext) genPredicateSelect(x *ast.Select) {
@@ -374,41 +266,5 @@ func (genc *genContext) genPredicateSelect(x *ast.Select) {
 
 // if
 func (genc *genContext) genSelectType(x *ast.SelectType) {
-
-	var loc = genc.localName("")
-	genc.c("%s %s = %s;", genc.typeRef(x.X.GetType()), loc, genc.genExpr(x.X))
-
-	var tag = genc.localName("tag")
-	genc.c("void* %s = %s->%s;", tag, loc, nm_VT_field)
-
-	var els = ""
-	for _, c := range x.Cases {
-
-		var conds = make([]string, 0)
-		for _, t := range c.Types {
-			var tname = genc.typeRef(t)
-			conds = append(conds, fmt.Sprintf("%s == %s", tag, tname+nm_class_info_ptr_suffix))
-		}
-		genc.c("%sif (%s) {", els, strings.Join(conds, " || "))
-		els = "else "
-
-		if c.Var != nil {
-			var v = c.Var
-
-			genc.c("%s %s = %s%s;",
-				genc.typeRef(v.Typ),
-				genc.declName(v),
-				genc.assignCast(v.Typ, x.X.GetType()),
-				loc)
-		}
-		genc.genStatementSeq(c.Seq)
-		genc.c("}")
-	}
-
-	if x.Else != nil {
-		genc.c("else {")
-		genc.genStatementSeq(x.Else)
-		genc.c("}")
-	}
 
 }

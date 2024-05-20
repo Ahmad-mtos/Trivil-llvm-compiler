@@ -140,6 +140,10 @@ func IsByte(t Type) bool {
 	return UnderType(t) == Byte
 }
 
+func IsSymbol(t Type) bool {
+	return UnderType(t) == Symbol
+}
+
 func IsInt64(t Type) bool {
 	return UnderType(t) == Int64
 }

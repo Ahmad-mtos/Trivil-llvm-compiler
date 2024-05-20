@@ -21,15 +21,6 @@ func (genc *genContext) genTypeDecl(td *ast.TypeDecl) {
 	
 }
 
-func (genc *genContext) genClassType(td *ast.TypeDecl, x *ast.ClassType) {
-
-	
-}
-
-func (genc *genContext) genClassDesc(td *ast.TypeDecl, cl *ast.ClassType) {
-
-}
-
 
 func predefinedTypeName(name string) string {
 	return ""

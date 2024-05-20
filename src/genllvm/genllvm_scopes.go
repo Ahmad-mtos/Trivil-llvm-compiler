@@ -1,8 +1,5 @@
 package genllvm
 
-import (
-)
-
 const (
     IntegerType = "i64"
     BooleanType = "i8"

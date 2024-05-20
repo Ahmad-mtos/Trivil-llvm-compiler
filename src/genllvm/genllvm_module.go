@@ -14,26 +14,20 @@ func (genc *genContext) genModule(main bool) {
 	//=== import
 	// CHANGER HERE: SHOULD BE HANDELED IN BUILD COMMAND IG?
 	/*
-	for _, i := range genc.module.Imports {
-		genc.h("#include \"%s\"", genc.declName(i.Mod)+".h")
-	}
-	genc.h("")
+		for _, i := range genc.module.Imports {
+			genc.h("#include \"%s\"", genc.declName(i.Mod)+".h")
+		}
+		genc.h("")
 	*/
 	//=== gen types
-	genc.genTypes = true
-	for _, d := range genc.module.Decls {
-		d, ok := d.(*ast.TypeDecl)
-		if ok {
-			genc.genVectorForwardDecl(d)
-		}
-	}
 
-	for _, d := range genc.module.Decls {
-		d, ok := d.(*ast.TypeDecl)
-		if ok {
-			genc.genTypeDecl(d)
-		}
-	}
+	// Prints to header, might delete
+	// for _, d := range genc.module.Decls {
+	// 	d, ok := d.(*ast.TypeDecl)
+	// 	if ok {
+	// 		genc.genTypeDecl(d)
+	// 	}
+	// }
 	genc.genTypes = false
 
 	//=== gen vars, consts
@@ -54,119 +48,51 @@ func (genc *genContext) genModule(main bool) {
 		}
 	}
 
-	//=== gen class desc
-	for _, d := range genc.module.Decls {
-		if td, ok := d.(*ast.TypeDecl); ok {
-			//			if cl, ok := ast.UnderType(td.GetType()).(*ast.ClassType); ok {
-			if cl, ok := td.GetType().(*ast.ClassType); ok {
-				genc.genClassDesc(td, cl)
-			}
-		}
-	}
-
 	genc.genEntry(genc.module.Entry, main)
 }
 
-
 func (genc *genContext) genFunction(f *ast.Function) {
 
-	if f.External {
-
-		apiName, ok := f.Mod.Attrs["sysapi"]
-		if ok {
-			exported, exist := genc.sysAPI[apiName]
-			if !exist {
-				genc.sysAPI[apiName] = f.Exported
-			} else if f.Exported && !exported {
-				genc.sysAPI[apiName] = true
-			}
-		}
-		return
-	}
-
-	var ft = f.Typ.(*ast.FuncType)
-
-	var receiver string
-	if f.Recv != nil {
-		receiver = fmt.Sprintf("%s %s",
-			genc.typeRef(f.Recv.Typ),
-			genc.declName(f.Recv))
-		if len(ft.Params) > 0 {
-			receiver += ", "
-		}
-	}
-
-	var fn_header = fmt.Sprintf("%s %s(%s%s)",
-		genc.returnType(ft),
-		genc.functionName(f),
-		receiver,
-		genc.params(ft))
-
-	genc.h("%s;", fn_header)
-	genc.c("%s {", fn_header)
-
-	genc.genStatementSeq(f.Seq)
-
-	genc.c("}")
 }
 
 func (genc *genContext) returnType(ft *ast.FuncType) string {
-	if ft.ReturnTyp == nil {
-		return "void"
-	} else {
-		return genc.typeRef(ft.ReturnTyp)
-	}
+	return ""
 }
 
 func (genc *genContext) params(ft *ast.FuncType) string {
-
-	var list = make([]string, len(ft.Params))
-
-	for i, p := range ft.Params {
-
-		if ast.IsVariadicType(p.Typ) {
-			list[i] = fmt.Sprintf("TInt64 %s%s", genc.declName(p), nm_variadic_len_suffic)
-			list = append(list, fmt.Sprintf("void* %s", genc.declName(p)))
-		} else {
-			var out = ""
-			if p.Out {
-				out = "*"
-			}
-
-			list[i] = fmt.Sprintf("%s%s %s", genc.typeRef(p.Typ), out, genc.declName(p))
-		}
-	}
-	return strings.Join(list, ", ")
+	return ""
 }
 
 //=== глобальные константы и переменные
 
 func (genc *genContext) genGlobalConst(x *ast.ConstDecl) {
+	// TODO: Check function and solve expression evaluation
 
-	var name = genc.declName(x)
+	var val = genc.genExpr(x.Value)
+	var ptr = genc.newRegister()
+	var typ = getLLVMType(x.Typ)
 
-	var typ string
-	if ast.IsFuncType(x.Typ) {
-		typ = genc.typeOfFunction(x.Value)
-	} else {
-		typ = genc.typeRef(x.Typ)
-	}
-
-	var def = fmt.Sprintf("%s %s", typ, name)
-
-	if initializeInPlace(x.Typ) {
-		def = "const " + def
-		genc.c("%s = %s;", def, genc.genExpr(x.Value))
-	} else {
-		genc.c("%s;", def)
-		genc.initGlobals = append(genc.initGlobals, x)
-	}
-
-	if x.Exported {
-		genc.h("extern %s;", def)
-	}
+	genc.c("@%d = constant %s %s", ptr, typ, val)
+	var data = SymbolData{ptr, typ}
+	addToScope(x.GetName(), data)
 }
 
+/**
+
+scope[ruski] = register, typ
+register is a pointer to the memory
+int x = 5
+=>
+scope[x] = 3
+alloca %3
+store %3, 5
+______________________________
+
+const int x = 5
+=>
+scope[x] = 3
+alloca
+*/
 // Обработка кода: конст к = функ
 func (genc *genContext) typeOfFunction(x ast.Expr) string {
 
@@ -222,7 +148,7 @@ func initializeInPlace(t ast.Type) bool {
 }
 
 func (genc *genContext) genGlobalVar(x *ast.VarDecl) {
-
+	// TODO: Solve evaluation of exprestion globally problem
 	if x.Exported {
 		panic("экспортированные глобалы - запретить или сделать")
 	}
@@ -230,36 +156,57 @@ func (genc *genContext) genGlobalVar(x *ast.VarDecl) {
 		panic("ni - 'позже' для глобалов")
 	}
 
-	var name = genc.declName(x)
+	var val = genc.genExpr(x.Init)
+	var ptr = genc.newRegister()
+	var typ = getLLVMType(x.Typ)
 
-	var typ string
-	if ast.IsFuncType(x.Typ) {
-		panic("closure not implemented")
-	} else {
-		typ = genc.typeRef(x.Typ)
-	}
-	var def = fmt.Sprintf("static %s %s", typ, name)
+	genc.c("@%d = global %s %s", ptr, typ, val)
+	var data = SymbolData{ptr, typ}
+	addToScope(x.GetName(), data)
+}
 
-	if initializeInPlace(x.Typ) {
-		genc.c("%s = %s;", def, genc.genExpr(x.Init))
-	} else {
-		genc.c("%s;", def)
-		genc.initGlobals = append(genc.initGlobals, x)
+func getLLVMType(typ ast.Type) string {
+	switch {
+	case ast.IsBoolType(typ):
+		return BooleanType
+	case ast.IsInt64(typ):
+		return IntegerType
+	case ast.IsFloatType(typ):
+		return FloatType
+	case ast.IsWord64(typ):
+		return WordType
+	case ast.IsSymbol(typ):
+		return SymbolType
+	case ast.IsStringType(typ):
+		return StringType
+	default:
+		panic("Error: LLVM type not implemented")
 	}
 }
 
-func (genc *genContext) genLocalDecl(d ast.Decl) string {
-	switch x := d.(type) {
-	case *ast.VarDecl:
+func (genc *genContext) genLocalDecl(d ast.Decl) {
+	// switch x := d.(type) {
+	// case *ast.VarDecl:
 
-		return fmt.Sprintf("%s %s = %s%s;",
-			genc.typeRef(x.Typ),
-			genc.declName(x),
-			genc.assignCast(x.Typ, x.Init.GetType()),
-			genc.genExpr(x.Init))
-	default:
-		panic(fmt.Sprintf("genDecl: ni %T", d))
-	}
+	// 	return fmt.Sprintf("%s %s = %s%s;",
+	// 		genc.typeRef(x.Typ),
+	// 		genc.declName(x),
+	// 		genc.assignCast(x.Typ, x.Init.GetType()),
+	// 		genc.genExpr(x.Init))
+	// default:
+	// 	panic(fmt.Sprintf("genDecl: ni %T", d))
+	// }
+	var x = d.(*ast.VarDecl)
+	var val = genc.genExpr(x.Init)
+	var ptr = genc.newRegister()
+	var typ = getLLVMType(x.Typ)
+
+	genc.c("%%%d = alloca %s", ptr, typ)
+	genc.c("store %s %s, %s* %%%d", typ, val, typ, ptr)
+
+	var data = SymbolData{ptr, typ}
+
+	addToScope(x.GetName(), data)
 }
 
 //==== вход - инициализация или головной
@@ -299,19 +246,5 @@ func (genc *genContext) genEntry(entry *ast.EntryFn, main bool) {
 	if main {
 		genc.c("ret i32 0")
 		genc.c("}")
-	}
-}
-
-func (genc *genContext) genInitGlobals() {
-	for _, g := range genc.initGlobals {
-		switch x := g.(type) {
-		case *ast.ConstDecl:
-			genc.c("%s = %s;", genc.declName(x), genc.genExpr(x.Value))
-		case *ast.VarDecl:
-			genc.c("%s = %s;", genc.declName(x), genc.genExpr(x.Init))
-		default:
-			panic(fmt.Sprintf("assert %T", g))
-		}
-
 	}
 }
