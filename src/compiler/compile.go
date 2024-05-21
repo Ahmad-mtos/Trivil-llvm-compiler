@@ -5,7 +5,7 @@ import (
 
 	"trivil/ast"
 	"trivil/env"
-	"trivil/genc"
+	"trivil/genllvm"
 	"trivil/semantics"
 )
 
@@ -66,9 +66,9 @@ func (cc *compileContext) build() {
 		cc.process(m)
 	}
 
-	if env.ErrorCount() == 0 && *env.DoGen && *env.BuildExe {
-		genc.BuildExe(cc.list)
-	}
+	// if env.ErrorCount() == 0 && *env.DoGen && *env.BuildExe {
+	// 	genllvm.BuildExe(cc.list)
+	// }
 }
 
 //=== process
@@ -84,7 +84,6 @@ func (cc *compileContext) process(m *ast.Module) {
 	}
 
 	if *env.ShowAST >= 2 {
-		fmt.Println("Poopoo")
 		fmt.Println(ast.SExpr(m))
 	}
 
@@ -94,7 +93,7 @@ func (cc *compileContext) process(m *ast.Module) {
 
 	if *env.DoGen {
 		// CHANGE HERE
-		genc.Generate(m, m == cc.main)
+		genllvm.Generate(m, m == cc.main)
 	}
 }
 

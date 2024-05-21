@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"trivil/ast"
@@ -18,7 +19,9 @@ type genContext struct {
 	outname     string
 	declNames   map[ast.Decl]string
 	genTypes    bool
+	globalCnt 	int
 	registerCnt int // used to know the current register number
+	labelCnt	int // used to know the current label number
 	autoNo      int // used for additional names
 	header      []string
 	code        []string
@@ -34,7 +37,9 @@ func Generate(m *ast.Module, main bool) {
 		module:      m,
 		outname:     env.OutName(m.Name),
 		declNames:   make(map[ast.Decl]string),
-		registerCnt: 10,
+		globalCnt:   0,
+		registerCnt: 0,
+		labelCnt:	 0,
 		header:      make([]string, 0),
 		code:        make([]string, 0),
 		globals:     make([]string, 0),
@@ -51,7 +56,6 @@ func Generate(m *ast.Module, main bool) {
 
 }
 
-
 func (genc *genContext) h(format string, args ...interface{}) {
 	genc.header = append(genc.header, fmt.Sprintf(format, args...))
 }
@@ -64,38 +68,29 @@ func (genc *genContext) g(format string, args ...interface{}) {
 	genc.globals = append(genc.globals, fmt.Sprintf(format, args...))
 }
 
+func (genc *genContext) newGlobal() int {
+	var ret = genc.globalCnt
+	genc.globalCnt++
+	return ret
+}
+
 func (genc *genContext) newRegister() int {
 	var ret = genc.registerCnt
 	genc.registerCnt++
 	return ret
 }
 
+func (genc *genContext) newLabel() string {
+	var ret = genc.labelCnt
+	genc.labelCnt++
+	return "label_" + strconv.Itoa(ret)
+}
+
 func (genc *genContext) finishCode() {
-	var hname = fmt.Sprintf("_%s_H", genc.outname)
-
-	// header file
-	var lines = genc.header
-
-	genc.header = make([]string, 0)
-	genc.h("#ifndef %s", hname)
-	genc.h("#define %s", hname)
-
-	// CHANGE HERE: COMMENTED OUT
-	//// genc.includeSysAPI(genc.header, true)
-	genc.h("")
-
-	genc.header = append(genc.header, lines...)
-
-	genc.h("#endif")
-
 	// code
-	lines = genc.code
+	var lines = genc.code
 	genc.code = make([]string, 0)
 
-	genc.c("#include \"rt_api.h\"")
-	genc.c("#include \"%s\"", genc.outname+".h")
-	// CHANGER HERE: COMMENTED OUT
-	///genc.includeSysAPI(genc.code, false)
 	genc.c("")
 
 	if len(genc.globals) != 0 {
@@ -108,7 +103,6 @@ func (genc *genContext) finishCode() {
 	genc.code = append(genc.code, lines...)
 }
 
-
 func (genc *genContext) save() {
 	var folder = env.PrepareOutFolder()
 
@@ -116,7 +110,7 @@ func (genc *genContext) save() {
 }
 
 func writeFile(folder, name, ext string, lines []string) {
-    writeFileCommon(folder, name, ext, lines, 0644)
+	writeFileCommon(folder, name, ext, lines, 0644)
 }
 
 func writeFileCommon(folder, name, ext string, lines []string, perm fs.FileMode) {
