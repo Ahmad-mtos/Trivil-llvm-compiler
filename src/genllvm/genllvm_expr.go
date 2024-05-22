@@ -2,7 +2,7 @@ package genllvm
 
 import (
 	"fmt"
-	//"strings"
+	"strings"
 	//"unicode"
 
 	"trivil/ast"
@@ -25,8 +25,8 @@ func (genc *genContext) genExpr(expr ast.Expr) string {
 	// 	return genc.genOfTypeExpr(x)
 	// case *ast.SelectorExpr:
 	// 	return genc.genSelector(x)
-	// case *ast.CallExpr:
-	// 	return genc.genCall(x)
+	case *ast.CallExpr:
+		return genc.genCall(x)
 	// case *ast.ConversionExpr:
 	// 	if x.Caution {
 	// 		return genc.genCautionCast(x)
@@ -52,10 +52,16 @@ func (genc *genContext) genIdent(id *ast.IdentExpr) string {
 	var identName = id.Name
 
 	var data = findInScopes(identName)
-	var register = genc.newRegister()
-
-	genc.c("%%%d = load %s, %s* %%%d", register, data.Typ, data.Typ, data.RegisterNum) // TODO: add align here
-	return fmt.Sprintf("%%%d", register)
+	ret := ""
+	
+	if getLLVMType(id.Typ) == FunctionType {
+		ret = data.RegisterNum
+	} else {
+		var register = genc.newRegister()
+		genc.c("%%%d = load %s, %s* %s", register, data.Typ, data.Typ, data.RegisterNum) // TODO: add align here
+		ret = fmt.Sprintf("%%%d", register)
+	}
+	return ret
 }
 
 func (genc *genContext) genLiteral(li *ast.LiteralExpr) string {
@@ -289,4 +295,61 @@ func (genc *genContext) genBinaryExpr(x *ast.BinaryExpr) string {
 
 func encodeLiteralString(runes []rune) string {
 	return ""
+}
+
+func (genc *genContext) genCall(call *ast.CallExpr) string {
+
+	if call.StdFunc != nil {
+		return ""
+		//return genc.genStdFuncCall(call)
+	}
+	var ft = call.X.GetType().(*ast.FuncType)
+	var left = genc.genExpr(call.X)
+	var cargs = genc.genArgs(call)
+	var typ = getLLVMType(ft.ReturnTyp)
+
+	var register = genc.newRegister()
+	var _call = fmt.Sprintf("call %s %s(%s)", typ, left, cargs)
+	
+	if typ == "void"{
+		return _call
+	}
+
+	genc.c("%%%d = %s", register, _call)
+
+	return fmt.Sprintf("%%%d", register)
+}
+
+func (genc *genContext) genArgs(call *ast.CallExpr) string {
+
+	var ft = call.X.GetType().(*ast.FuncType)
+
+	var cargs = make([]string, len(ft.Params))
+	var normLen = len(ft.Params)
+
+	// var vPar = ast.VariadicParam(ft)
+	// if vPar != nil {
+	// 	normLen--
+	// }
+
+	// не вариативные параметры
+	for i := 0; i < normLen; i++ {
+		var p = ft.Params[i]
+		var arg = call.Args[i]
+		var expr = genc.genExpr(arg)
+		var typ = getLLVMType(p.Typ)
+
+		cargs[i] = fmt.Sprintf("%s %s", typ, expr)
+	}
+
+	// if vPar != nil {
+	// 	var vTyp = vPar.Typ.(*ast.VariadicType)
+
+	// 	if ast.IsTagPairType(vTyp.ElementTyp) {
+	// 		cargs[normLen] = genc.genVariadicTaggedArgs(call, vPar, normLen)
+	// 	} else {
+	// 		cargs[normLen] = genc.genVariadicArgs(call, vPar, vTyp, normLen)
+	// 	}
+	// }
+	return strings.Join(cargs, ", ")
 }

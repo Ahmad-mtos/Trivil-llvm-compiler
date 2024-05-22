@@ -48,19 +48,72 @@ func (genc *genContext) genModule(main bool) {
 		}
 	}
 
+	genc.registerCnt = 1
 	genc.genEntry(genc.module.Entry, main)
 }
 
 func (genc *genContext) genFunction(f *ast.Function) {
+	ft := f.Typ.(*ast.FuncType)
+	typ := getLLVMType(ft.ReturnTyp)
+	name := fmt.Sprintf("@%d", genc.newGlobal())
+	proccessedParams := ""
+	proccessedPostParams := ""
 
+	data := SymbolData{name, typ}
+
+	addToScope(f.Name, data)
+
+	pushScope(FuncScope, "", "")
+
+	if len(ft.Params) != 0 {
+		proccessedParams = genc.genParams(ft)
+		genc.registerCnt++
+		proccessedPostParams = genc.genPostParams(ft)
+	}
+	
+	genc.c("define dso_local %s %s(%s) #0 {", typ, name, proccessedParams)
+	genc.c("%s", proccessedPostParams)
+	genc.genStatementSeq(f.Seq)
+	genc.c("}")
+
+	popScope()
+	genc.registerCnt = 0
 }
 
 func (genc *genContext) returnType(ft *ast.FuncType) string {
 	return ""
 }
 
-func (genc *genContext) params(ft *ast.FuncType) string {
-	return ""
+func (genc *genContext) genParams(ft *ast.FuncType) string {
+	params := make([]string, len(ft.Params))
+
+	for i, param := range ft.Params {
+		register := fmt.Sprintf("%%%d", genc.newRegister())
+		typ := getLLVMType(param.Typ)
+		params[i] = fmt.Sprintf("%s %s", typ, register)
+
+		data := SymbolData{register, typ}
+		addToScope(param.Name, data)
+	}
+	return strings.Join(params, ", ")
+}
+
+func (genc *genContext) genPostParams(ft *ast.FuncType) string {
+	params := make([]string, len(ft.Params) * 2)
+	n := len(ft.Params)
+
+	for i, param := range ft.Params {
+		register := fmt.Sprintf("%%%d", genc.newRegister())
+		oldRegister := findInScopes(param.Name).RegisterNum
+		typ := getLLVMType(param.Typ)
+
+		params[i] = fmt.Sprintf("%s = alloca %s", register, typ)
+		params[i + n] = fmt.Sprintf("store %s %s, %s* %s", typ, oldRegister, typ, register)
+
+		data := SymbolData{register, typ}
+		addToScope(param.Name, data)
+	}
+	return strings.Join(params, "\n")
 }
 
 //=== глобальные константы и переменные
@@ -73,7 +126,7 @@ func (genc *genContext) genGlobalConst(x *ast.ConstDecl) {
 	var typ = getLLVMType(x.Typ)
 
 	genc.c("@%d = constant %s %s", ptr, typ, val)
-	var data = SymbolData{ptr, typ}
+	var data = SymbolData{fmt.Sprintf("@%d",ptr), typ}
 	addToScope(x.GetName(), data)
 }
 
@@ -157,11 +210,11 @@ func (genc *genContext) genGlobalVar(x *ast.VarDecl) {
 	}
 
 	var val = genc.genExpr(x.Init)
-	var ptr = genc.newRegister()
+	var ptr = genc.newGlobal()
 	var typ = getLLVMType(x.Typ)
 
 	genc.c("@%d = global %s %s", ptr, typ, val)
-	var data = SymbolData{ptr, typ}
+	var data = SymbolData{fmt.Sprintf("@%d",ptr), typ}
 	addToScope(x.GetName(), data)
 }
 
@@ -179,6 +232,10 @@ func getLLVMType(typ ast.Type) string {
 		return SymbolType
 	case ast.IsStringType(typ):
 		return StringType
+	case ast.IsFuncType(typ):
+		return FunctionType
+	case typ == nil:
+		return VoidType
 	default:
 		panic("Error: LLVM type not implemented")
 	}
@@ -204,7 +261,7 @@ func (genc *genContext) genLocalDecl(d ast.Decl) {
 	genc.c("%%%d = alloca %s", ptr, typ)
 	genc.c("store %s %s, %s* %%%d", typ, val, typ, ptr)
 
-	var data = SymbolData{ptr, typ}
+	var data = SymbolData{fmt.Sprintf("%%%d",ptr), typ}
 
 	addToScope(x.GetName(), data)
 }

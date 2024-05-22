@@ -1,5 +1,7 @@
 package genllvm
 
+import "fmt"
+
 const (
     IntegerType = "i64"
     BooleanType = "i8"
@@ -8,6 +10,8 @@ const (
 	SymbolType = "i32"
 	StringType = "type { i64, i64, i8* }"
 	NullType = "null"
+	VoidType = "void"
+	FunctionType = "func"
 )
 
 const (
@@ -18,7 +22,7 @@ const (
 )
 
 type SymbolData struct{
-	RegisterNum int
+	RegisterNum string
 	Typ string
 }
 
@@ -59,7 +63,7 @@ func findInScopes(name string) *SymbolData {
 
 	for {
 		if cur == nil {
-			panic("المجهول ليس في النطاق.")
+			panic(fmt.Sprintf("%s المجهول ليس في النطاق.", name))
 		}
 
 		d, ok := cur.Names[name]

@@ -3,7 +3,7 @@ package genllvm
 import (
 	"fmt"
 	// "strings"
-	"strconv"
+	//"strconv"
 	"trivil/ast"
 	// "trivil/env"
 )
@@ -22,9 +22,9 @@ func (genc *genContext) genStatement(s ast.Statement) {
 	switch x := s.(type) {
 	case *ast.DeclStatement: // DONE
 		genc.genLocalDecl(x.D)
-	// case *ast.ExprStatement:
-	// 	s := genc.genExpr(x.X)
-	// 	genc.c("%s;", s)
+	case *ast.ExprStatement:
+		s := genc.genExpr(x.X)
+		genc.c("%s", s)
 	case *ast.AssignStatement: // DONE
 		genc.genAssignStatement(x)
 	case *ast.IncStatement: // DONE
@@ -84,10 +84,8 @@ func (genc *genContext) genReturn(x *ast.Return) {
 			panic(fmt.Sprintf("genReturn: type not supported %d", 10200))
 		}
 	} else {
-		genc.c("ret i32 0")
+		genc.c("ret void")
 	}
-
-	popScope()
 }
 
 func (genc *genContext) genBreak() {
@@ -104,7 +102,7 @@ func (genc *genContext) genBreak() {
 func (genc *genContext) genAssignStatement(x *ast.AssignStatement) {
 	data := findInScopes(x.L.(*ast.IdentExpr).Name)
 
-	l := "%" + strconv.Itoa(data.RegisterNum)
+	l := data.RegisterNum
 	r := genc.genExpr(x.R)
 
 	typ := getLLVMType(x.L.GetType())
@@ -114,7 +112,7 @@ func (genc *genContext) genAssignStatement(x *ast.AssignStatement) {
 func (genc *genContext) genIncStatement(x *ast.IncStatement) {
 	data := findInScopes(x.L.(*ast.IdentExpr).Name)
 
-	l := "%" + strconv.Itoa(data.RegisterNum)
+	l := data.RegisterNum
 	//r := genc.genExpr(x.R)
 
 	typ := getLLVMType(x.L.GetType())
@@ -140,7 +138,7 @@ func (genc *genContext) genIncStatement(x *ast.IncStatement) {
 func (genc *genContext) genDecStatement(x *ast.DecStatement) {
 	data := findInScopes(x.L.(*ast.IdentExpr).Name)
 
-	l := "%" + strconv.Itoa(data.RegisterNum)
+	l := data.RegisterNum
 	//r := genc.genExpr(x.R)
 
 	typ := getLLVMType(x.L.GetType())
