@@ -30,6 +30,13 @@ func (genc *genContext) genModule(main bool) {
 	// }
 	genc.genTypes = false
 
+
+	//=== gen printf globals
+	genc.c("@.int = private unnamed_addr constant [4 x i8] c\"%%d\\0A\\00\"")
+	genc.c("@.double = private unnamed_addr constant [5 x i8] c\"%%lf\\0A\\00\"")
+	genc.c("declare i32 @printf(i8*, ...) #1")
+	genc.c("")
+
 	//=== gen vars, consts
 	for _, d := range genc.module.Decls {
 		switch x := d.(type) {
@@ -49,6 +56,7 @@ func (genc *genContext) genModule(main bool) {
 	}
 
 	genc.registerCnt = 1
+
 	genc.genEntry(genc.module.Entry, main)
 }
 
@@ -222,7 +230,7 @@ func getLLVMType(typ ast.Type) string {
 	switch {
 	case ast.IsBoolType(typ):
 		return BooleanType
-	case ast.IsInt64(typ):
+	case ast.IsInt64(typ), ast.IsByte(typ):
 		return IntegerType
 	case ast.IsFloatType(typ):
 		return FloatType
@@ -237,7 +245,7 @@ func getLLVMType(typ ast.Type) string {
 	case typ == nil:
 		return VoidType
 	default:
-		panic("Error: LLVM type not implemented")
+		panic(fmt.Sprint("LLVM type not implemented %T", typ))
 	}
 }
 
@@ -295,9 +303,11 @@ func (genc *genContext) genEntry(entry *ast.EntryFn, main bool) {
 	// genc.code = append(genc.code, genc.init...)
 
 	// genc.genInitGlobals()
-
+	
 	if entry != nil {
+		pushScope(FuncScope,"", "")
 		genc.genStatementSeq(entry.Seq)
+		popScope()
 	}
 
 	if main {

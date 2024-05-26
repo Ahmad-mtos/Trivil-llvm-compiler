@@ -47,7 +47,12 @@ func Generate(m *ast.Module, main bool) {
 		initGlobals: make([]ast.Decl, 0),
 		sysAPI:      make(map[string]bool),
 	}
-	pushScope(GlobalScope, "", "")
+	if TopScope == nil{
+		pushScope(GlobalScope, "", "")
+	}
+
+	pushSTD()
+
 	genllvm.genModule(main)
 	genllvm.finishCode()
 

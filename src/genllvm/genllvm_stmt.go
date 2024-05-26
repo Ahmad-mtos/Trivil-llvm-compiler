@@ -18,7 +18,6 @@ func (genc *genContext) genStatementSeq(seq *ast.StatementSeq) {
 }
 
 func (genc *genContext) genStatement(s ast.Statement) {
-	fmt.Println(s)
 	switch x := s.(type) {
 	case *ast.DeclStatement: // DONE
 		genc.genLocalDecl(x.D)
@@ -66,9 +65,6 @@ func (genc *genContext) assignCast(lt, rt ast.Type) string {
 }
 
 func (genc *genContext) genReturn(x *ast.Return) {
-	for TopScope.ScopeType != FuncScope {
-		popScope()
-	}
 
 	if x.X != nil {
 		var xType = x.X.GetType()
@@ -80,6 +76,8 @@ func (genc *genContext) genReturn(x *ast.Return) {
 			genc.c("ret double %s", expr)
 		case ast.IsBoolType(xType):
 			genc.c("ret i8 %s", expr)
+		case ast.IsSymbol(xType):
+			genc.c("ret i32 %s", expr)
 		default:
 			panic(fmt.Sprintf("genReturn: type not supported %d", 10200))
 		}
@@ -89,14 +87,10 @@ func (genc *genContext) genReturn(x *ast.Return) {
 }
 
 func (genc *genContext) genBreak() {
-	for TopScope.ScopeType != LoopScope {
-		popScope()
-	}
-
-	var restRegister = TopScope.EndLabel
+	printScopes()
+	var restRegister = findEndLabel(LoopScope)
 	genc.c("br label %%%s", restRegister)
-
-	popScope()
+	printScopes()
 }
 
 func (genc *genContext) genAssignStatement(x *ast.AssignStatement) {
@@ -175,11 +169,15 @@ func (genc *genContext) genIf(x *ast.If) {
 	genc.genStatementSeq(x.Then)
 	genc.c("br label %%%s", restRegister)
 
+	popScope()
+	pushScope(IfScope, "", restRegister)
+
 	genc.c("%s:", exprFalse)
 	genc.genStatementSeq(x.Else.(*ast.StatementSeq))
 	genc.c("br label %%%s", restRegister)
 
 	genc.c("%s:", restRegister)
+	popScope()
 }
 
 func removeExtraPars(s string) string {
@@ -290,7 +288,7 @@ func (genc *genContext) genPredicateSelect(x *ast.Select) {
 				genc.c("%s:", exprFalse)
 			}
 			exprFalse = genc.newLabel()
-			genc.c("br i1 %%%s, label %%%s, label %%%s", condExpr, exprTrue, exprFalse)
+			genc.c("br i1 %s, label %%%s, label %%%s", condExpr, exprTrue, exprFalse)
 		}
 		genc.c("%s:", exprTrue)
 		genc.genStatementSeq(c.Seq)

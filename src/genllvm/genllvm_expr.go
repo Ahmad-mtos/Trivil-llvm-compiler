@@ -3,6 +3,7 @@ package genllvm
 import (
 	"fmt"
 	"strings"
+
 	//"unicode"
 
 	"trivil/ast"
@@ -23,8 +24,8 @@ func (genc *genContext) genExpr(expr ast.Expr) string {
 		return genc.genBinaryExpr(x)
 	// case *ast.OfTypeExpr:
 	// 	return genc.genOfTypeExpr(x)
-	// case *ast.SelectorExpr:
-	// 	return genc.genSelector(x)
+	case *ast.SelectorExpr:
+		return genc.genSelectorExpr(x)
 	case *ast.CallExpr:
 		return genc.genCall(x)
 	// case *ast.ConversionExpr:
@@ -47,10 +48,16 @@ func (genc *genContext) genExpr(expr ast.Expr) string {
 	}
 }
 
+func (genc *genContext) genSelectorExpr(s *ast.SelectorExpr) string {
+	name := s.Name
+	findInScopes(name)
+	return name
+}
+
 func (genc *genContext) genIdent(id *ast.IdentExpr) string {
 	// In case of ident is var
 	var identName = id.Name
-
+	
 	var data = findInScopes(identName)
 	ret := ""
 	
@@ -299,23 +306,41 @@ func encodeLiteralString(runes []rune) string {
 
 func (genc *genContext) genCall(call *ast.CallExpr) string {
 
-	if call.StdFunc != nil {
-		return ""
-		//return genc.genStdFuncCall(call)
-	}
+	// if call.StdFunc != nil {
+	// 	return ""
+	// 	//return genc.genStdFuncCall(call)
+	// }
+
 	var ft = call.X.GetType().(*ast.FuncType)
 	var left = genc.genExpr(call.X)
 	var cargs = genc.genArgs(call)
 	var typ = getLLVMType(ft.ReturnTyp)
+	var isSTD = false
+
+	switch left {
+	case "цел64":
+		left = findInScopes(left).RegisterNum
+		reg := genc.newRegister()
+		genc.c("%%%d = getelementptr inbounds [4 x i8], [4 x i8]*  @.int, i32 0, i32 0",reg)
+		cargs = fmt.Sprintf("i8* %%%d, %s", reg, cargs)
+		isSTD = true
+	case "вещ64":
+		left = findInScopes(left).RegisterNum
+		reg := genc.newRegister()
+		genc.c("%%%d = getelementptr inbounds [5 x i8], [5 x i8]*  @.double, i32 0, i32 0",reg)
+		cargs = fmt.Sprintf("i8* %%%d, %s", reg, cargs)
+		isSTD = true
+	}
 
 	var register = genc.newRegister()
 	var _call = fmt.Sprintf("call %s %s(%s)", typ, left, cargs)
 	
-	if typ == "void"{
+	if typ == "void" || isSTD{
 		return _call
 	}
 
 	genc.c("%%%d = %s", register, _call)
+
 
 	return fmt.Sprintf("%%%d", register)
 }

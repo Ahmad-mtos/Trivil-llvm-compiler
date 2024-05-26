@@ -47,6 +47,18 @@ func pushScope(scopeType int, startLabel string, endLabel string) {
 	TopScope = newScope
 }
 
+func pushSTD() {
+	// var trueData = SymbolData{"true", BooleanType}
+	// addToScope("истина", trueData)
+	// var falseData = SymbolData{"false", BooleanType}
+	// addToScope("ложь", falseData)
+
+	data := SymbolData{"(i8*, ...) @printf",SymbolType}
+	addToScope("цел64", data)
+	data = SymbolData{"(i8*, ...) @printf",SymbolType}
+	addToScope("вещ64", data)
+}
+
 func popScope() {
 	if TopScope.Outer == nil{
 		panic("Stack is empty.")
@@ -56,6 +68,35 @@ func popScope() {
 
 func addToScope(name string, data SymbolData) {
 	TopScope.Names[name] = data
+}
+
+func printScopes() {
+	var cur = TopScope
+	for cur != nil {
+		println(cur.ScopeType,":")
+		for key,name := range cur.Names{
+			println(key, name.RegisterNum, name.Typ)
+		}
+		cur = cur.Outer
+	}
+}
+
+func findScopeWithType(scopeTyp int) *Scope {
+	var cur = TopScope
+	for {
+		if cur == nil {
+			panic(fmt.Sprint("%d نوع النطاق ليس موجود", scopeTyp))
+		}
+		if cur.ScopeType == scopeTyp {
+			return cur
+		}
+		cur = cur.Outer
+	}
+}
+
+func findEndLabel(scopeTyp int) string {
+	var cur = findScopeWithType(scopeTyp)
+	return cur.EndLabel
 }
 
 func findInScopes(name string) *SymbolData {
