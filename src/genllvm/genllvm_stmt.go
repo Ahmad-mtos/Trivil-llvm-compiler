@@ -23,7 +23,13 @@ func (genc *genContext) genStatement(s ast.Statement) {
 		genc.genLocalDecl(x.D)
 	case *ast.ExprStatement:
 		s := genc.genExpr(x.X)
-		genc.c("%s", s)
+		switch x.X.(type) {
+		case *ast.CallExpr: 
+			return
+		default:
+			genc.c("%s", s)
+		}
+
 	case *ast.AssignStatement: // DONE
 		genc.genAssignStatement(x)
 	case *ast.IncStatement: // DONE
@@ -84,13 +90,13 @@ func (genc *genContext) genReturn(x *ast.Return) {
 	} else {
 		genc.c("ret void")
 	}
+	terminateScope()
 }
 
 func (genc *genContext) genBreak() {
-	printScopes()
 	var restRegister = findEndLabel(LoopScope)
 	genc.c("br label %%%s", restRegister)
-	printScopes()
+	terminateScope()
 }
 
 func (genc *genContext) genAssignStatement(x *ast.AssignStatement) {
@@ -168,16 +174,16 @@ func (genc *genContext) genIf(x *ast.If) {
 	genc.c("%s:", exprTrue)
 	genc.genStatementSeq(x.Then)
 	genc.c("br label %%%s", restRegister)
-
 	popScope()
+
 	pushScope(IfScope, "", restRegister)
 
 	genc.c("%s:", exprFalse)
 	genc.genStatementSeq(x.Else.(*ast.StatementSeq))
 	genc.c("br label %%%s", restRegister)
+	popScope()
 
 	genc.c("%s:", restRegister)
-	popScope()
 }
 
 func removeExtraPars(s string) string {
@@ -206,9 +212,9 @@ func (genc *genContext) genWhile(x *ast.While) {
 	genc.c("%s:", exprTrue)
 	genc.genStatementSeq(x.Seq)
 	genc.c("br label %%%s", condition)
+	popScope()
 
 	genc.c("%s:", exprFalse)
-	popScope()
 }
 
 func (genc *genContext) genCycle(x *ast.Cycle) {
@@ -290,9 +296,12 @@ func (genc *genContext) genPredicateSelect(x *ast.Select) {
 			exprFalse = genc.newLabel()
 			genc.c("br i1 %s, label %%%s, label %%%s", condExpr, exprTrue, exprFalse)
 		}
+
+		pushScope(IfScope, "", "")
 		genc.c("%s:", exprTrue)
 		genc.genStatementSeq(c.Seq)
 		genc.c("br label %%%s", restRegister)
+		popScope()
 
 		// to branch to the next case.
 		if caseIdx != len(x.Cases)-1 {
@@ -302,8 +311,10 @@ func (genc *genContext) genPredicateSelect(x *ast.Select) {
 
 	genc.c("%s:", exprFalse)
 	if x.Else != nil {
+		pushScope(IfScope, "", "")
 		genc.genStatementSeq(x.Else)
 		genc.c("br label %%%s", restRegister)
+		popScope()
 	} else {
 		genc.c("br label %%%s", restRegister)
 	}

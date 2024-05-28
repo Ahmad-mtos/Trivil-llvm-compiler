@@ -98,11 +98,7 @@ func (genc *genContext) genUnaryOp(x *ast.UnaryExpr) string {
 	case lexer.NOT:
 		switch{
 		case ast.IsBoolType(typ):
-			var temp1 = genc.newRegister()
-			var temp2 = genc.newRegister()
-			genc.c("%%%d = trunc i8 %s to i1", temp1, X)
-			genc.c("%%%d = xor i1 %%%d, true", temp2, temp1)
-			genc.c("%%%d = zext i1 %%%d to i8", result, temp2)
+			genc.c("%%%d = xor i1 %s, true", result, X)
 		default:
 			panic(fmt.Sprintf("Type not applicable: %s", typ))
 		}
@@ -336,7 +332,8 @@ func (genc *genContext) genCall(call *ast.CallExpr) string {
 	var _call = fmt.Sprintf("call %s %s(%s)", typ, left, cargs)
 	
 	if typ == "void" || isSTD{
-		return _call
+		genc.c("%s", _call)
+		return ""
 	}
 
 	genc.c("%%%d = %s", register, _call)

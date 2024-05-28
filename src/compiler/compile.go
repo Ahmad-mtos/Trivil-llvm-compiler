@@ -66,9 +66,9 @@ func (cc *compileContext) build() {
 		cc.process(m)
 	}
 
-	// if env.ErrorCount() == 0 && *env.DoGen && *env.BuildExe {
-	// 	genllvm.BuildExe(cc.list)
-	// }
+	if env.ErrorCount() == 0 && *env.DoGen && *env.BuildExe {
+		genllvm.BuildExe(cc.list)
+	}
 }
 
 //=== process

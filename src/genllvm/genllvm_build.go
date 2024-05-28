@@ -1,4 +1,4 @@
-package genc
+package genllvm
 
 import (
 	"fmt"
@@ -16,11 +16,10 @@ import (
 )
 
 const (
-	conf_file_name = "config/genc.txt"
+	conf_file_name = "config/genllvm.txt"
 	place_files    = "#files#"
 	place_target   = "#target#"
-	place_runtime  = "#runtime#"
-	place_genc     = "#genc#"
+	place_genllvm  = "#genllvm#"
 )
 
 var _ = fmt.Printf
@@ -36,18 +35,17 @@ func BuildExe(modules []*ast.Module) {
 	}
 	var names = make([]string, len(modules))
 	for i, m := range modules {
-		names[i] = env.OutName(m.Name) + ".c"
+		names[i] = env.OutName(m.Name) + ".ll"
 	}
 
 	var target = env.OutName(modules[len(modules)-1].Name)
 
 	command = strings.ReplaceAll(command, place_files, strings.Join(names, " "))
-	command = strings.ReplaceAll(command, place_runtime, env.RuntimePath())
 	command = strings.ReplaceAll(command, place_target, target)
-
 	var folder = env.PrepareOutFolder()
 	gencAbsolute, _ := filepath.Abs(folder)
-	command = strings.ReplaceAll(command, place_genc, gencAbsolute)
+	command = strings.ReplaceAll(command, place_genllvm, gencAbsolute)
+
 	//=== write script file
 	var script = findTemplate(runtime.GOOS + "-script")
 	if script != "" {

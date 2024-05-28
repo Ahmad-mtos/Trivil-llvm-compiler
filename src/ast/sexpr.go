@@ -15,13 +15,10 @@ func SExpr(n interface{}) string {
 func sexpr(v reflect.Value) string {
 	v, ok := getStruct(v)
 	if !ok {
-
-		fmt.Println("1- NOT ok: " + "\"_\" + v.Type().Kind().String()")
 		return "_" + v.Type().Kind().String()
 	}
 
 	if v.Type().Name() == "Scope" {
-		fmt.Println("2- Empty shit: " + "")
 		return ""
 	}
 
@@ -37,14 +34,10 @@ func sexpr(v reflect.Value) string {
 		if !typ.IsNil() {
 			resolved = "Resolved"
 		}
-		fmt.Println("3- TypeRef" + fmt.Sprintf("(TypeRef \"%s\" %s)", tname, resolved))
 		return fmt.Sprintf("(TypeRef \"%s\" %s)", tname, resolved)
 	}
 
 	var fs = ""
-	if v.Type().Name() == "Module" {
-		fmt.Println(v.NumField())
-	}
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)
 
@@ -122,7 +115,6 @@ func sexpr(v reflect.Value) string {
 		}
 	}
 	var str = fmt.Sprintf("(%s%s)", v.Type().Name(), fs)
-	fmt.Println("4- Str thingy: " + str)
 	return str
 }
 

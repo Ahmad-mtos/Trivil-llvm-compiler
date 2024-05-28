@@ -32,6 +32,8 @@ func (genc *genContext) genModule(main bool) {
 
 
 	//=== gen printf globals
+	genc.c("@true = private unnamed_addr constant i1 true")
+	genc.c("@false = private unnamed_addr constant i1 false")
 	genc.c("@.int = private unnamed_addr constant [4 x i8] c\"%%d\\0A\\00\"")
 	genc.c("@.double = private unnamed_addr constant [5 x i8] c\"%%lf\\0A\\00\"")
 	genc.c("declare i32 @printf(i8*, ...) #1")
@@ -82,9 +84,9 @@ func (genc *genContext) genFunction(f *ast.Function) {
 	genc.c("define dso_local %s %s(%s) #0 {", typ, name, proccessedParams)
 	genc.c("%s", proccessedPostParams)
 	genc.genStatementSeq(f.Seq)
+	popScope()
 	genc.c("}")
 
-	popScope()
 	genc.registerCnt = 0
 }
 

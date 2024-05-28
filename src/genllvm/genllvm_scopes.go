@@ -1,10 +1,12 @@
 package genllvm
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
     IntegerType = "i64"
-    BooleanType = "i8"
+    BooleanType = "i1"
     FloatType = "double"
 	WordType = "i64"
 	SymbolType = "i32"
@@ -28,7 +30,8 @@ type SymbolData struct{
 
 type Scope struct {
 	Outer *Scope
-	Names map[string]SymbolData 
+	Names map[string]SymbolData
+	Terminated bool 
 	ScopeType int
 	StartLabel string
 	EndLabel string
@@ -40,11 +43,27 @@ func pushScope(scopeType int, startLabel string, endLabel string) {
 	var newScope = &Scope{
 		Outer: TopScope,
 		Names: make(map[string]SymbolData),
+		Terminated: false,
 		ScopeType:  scopeType,
 		StartLabel: startLabel,
 		EndLabel: endLabel,
 	}
 	TopScope = newScope
+}
+
+func terminateScope() {
+	TopScope.Terminated = true
+}
+
+func isTerminated() bool {
+	var cur = TopScope
+	for cur != nil {
+		if cur.Terminated {
+			return true
+		}
+		cur = cur.Outer
+	}
+	return false
 }
 
 func pushSTD() {
@@ -57,7 +76,13 @@ func pushSTD() {
 	addToScope("цел64", data)
 	data = SymbolData{"(i8*, ...) @printf",SymbolType}
 	addToScope("вещ64", data)
+
+	data = SymbolData{"@true",BooleanType}
+	addToScope("истина", data)
+	data = SymbolData{"@false",BooleanType}
+	addToScope("ложь", data)
 }
+
 
 func popScope() {
 	if TopScope.Outer == nil{
@@ -73,7 +98,7 @@ func addToScope(name string, data SymbolData) {
 func printScopes() {
 	var cur = TopScope
 	for cur != nil {
-		println(cur.ScopeType,":")
+		println(cur.ScopeType,":(", cur.Terminated,")")
 		for key,name := range cur.Names{
 			println(key, name.RegisterNum, name.Typ)
 		}

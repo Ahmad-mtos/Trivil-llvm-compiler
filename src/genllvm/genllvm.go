@@ -66,7 +66,9 @@ func (genc *genContext) h(format string, args ...interface{}) {
 }
 
 func (genc *genContext) c(format string, args ...interface{}) {
-	genc.code = append(genc.code, fmt.Sprintf(format, args...))
+	if !isTerminated() {
+		genc.code = append(genc.code, fmt.Sprintf(format, args...))
+	}
 }
 
 func (genc *genContext) g(format string, args ...interface{}) {
@@ -81,7 +83,9 @@ func (genc *genContext) newGlobal() int {
 
 func (genc *genContext) newRegister() int {
 	var ret = genc.registerCnt
-	genc.registerCnt++
+	if !isTerminated() {
+		genc.registerCnt++
+	}
 	return ret
 }
 
@@ -118,6 +122,10 @@ func writeFile(folder, name, ext string, lines []string) {
 	writeFileCommon(folder, name, ext, lines, 0644)
 }
 
+func writeFileExecutable(folder, name, ext string, lines []string) {
+    writeFileCommon(folder, name, ext, lines, 0755)
+}
+
 func writeFileCommon(folder, name, ext string, lines []string, perm fs.FileMode) {
 
 	var filename = path.Join(folder, name+ext)
@@ -130,3 +138,4 @@ func writeFileCommon(folder, name, ext string, lines []string, perm fs.FileMode)
 		panic("Ошибка записи файла " + filename + ": " + err.Error())
 	}
 }
+

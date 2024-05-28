@@ -1,0 +1,11 @@
+windows-build: clang  #files# -ldbghelp -Wl,-noimplib -fno-omit-frame-pointer -gline-tables-only -O3 -o ../#target#.exe && del /f ..\#target#.exp
+windows-script: build.bat
+
+linux-build: pushd . && cd #genllvm# && clang #files# -lm -rdynamic -O3 -o ../#target#.exe && popd
+linux-script: build.sh
+
+darwin-build: pushd . && cd #genllvm# && clang #files# -lm -rdynamic -O3 -o ../#target#.exe && popd
+darwin-script: build.sh
+
+freebsd-build: pushd . && cd #genllvm# && clang #files# -lm -lexecinfo -rdynamic -O3 -o ../#target#.exe && popd
+freebsd-script: build.sh

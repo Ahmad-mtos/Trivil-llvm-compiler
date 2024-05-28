@@ -1,48 +1,47 @@
 модуль pipi
 импорт "стд::llvm"
-
-
-вход {
-    пусть n : Цел64 := 10
-    пока n > 0 {
-        если n = 0 {
-            пусть x : Цел64 := 10
-            если n = 0 {
-                прервать
-                rest label = sopdfjopj
-            }
-            иначе {
-                n := n * n 
-                n--
-                x := 5
-            }
-            x := 5
-        }
-        иначе {
-            n := n * n 
-            n--
-        }
-        n := 5
+/*
+фн fibonacci sequence(n : Цел64) : Цел64 {
+    пусть ret: Цел64 := 0
+    если n <= 1 {
+        ret := n
     }
-    //llvm.цел64(fibonacci sequence(x))
+    иначе {
+        ret := fibonacci sequence(n - 1) + fibonacci sequence (n - 2)
+    }
+    вернуть ret
 }
 
-/*
 вход {
-    пусть n : Цел64 := 10
+    llvm.цел64(fibonacci sequence(50))
+}
+*/
+
+
+вход {
+    пусть n : Цел64 := 100000
+    пусть mod : Цел64 := 1000000007
     пусть factorial : Цел64 := 1
-    пока 1 > 0 {
+    пока истина {
         если n = 0 {
             прервать
         }
         иначе {
-            factorial := factorial * n 
+            пусть m : Цел64 := n
+            factorial := 1
+            пока m > 0 {
+                factorial := factorial * m 
+                factorial := factorial % mod
+                m--
+            }
             n--
         }
     }
+
+    llvm.цел64(factorial)
 }
 
-*/
+
 
 
 
