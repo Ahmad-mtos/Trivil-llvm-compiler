@@ -76,7 +76,7 @@ func BuildExe(modules []*ast.Module) {
 	if err != nil {
 		fmt.Printf("Exec failed: %s\n%s\n", err.Error(), string(out))
 	} else {
-		fmt.Printf("Execute: ./%s  Rebuild C code: %s/%s\n", target, folder, script)
+		fmt.Printf("Execute: ./%s  Rebuild LLVM code: %s/%s\n", target, folder, script)
 	}
 }
 
