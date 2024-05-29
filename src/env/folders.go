@@ -48,7 +48,7 @@ func (np *NormalizePath) Process(fpath string) {
 	np.Root = parts[0]
 	rootPath, ok := sourceRoots[np.Root]
 	if !ok {
-		np.Err = goerr.New(fmt.Sprintf("путь для кодовой базы '%s' не задан", np.Root))
+		np.Err = fmt.Errorf("путь для кодовой базы '%s' не задан", np.Root)
 		return
 	}
 	np.NPath = path.Join(rootPath, parts[1])

@@ -77,7 +77,7 @@ func GetSources(spath string) []*Source {
 		panic(fmt.Sprintf("panic GetSources(%s): %s", folder, err.Error()))
 	}
 
-	names, err := f.Readdirnames(0)
+	names, _ := f.Readdirnames(0)
 	for _, name := range names {
 		if name != filename && strings.HasSuffix(name, file_extension) {
 			var src = readSource(spath, folder, name)
@@ -112,7 +112,7 @@ func GetFolderSources(origin, folder string) []*Source {
 		panic(fmt.Sprintf("panic GetFolderSources(%s): %s", folder, err.Error()))
 	}
 
-	names, err := f.Readdirnames(0)
+	names, _ := f.Readdirnames(0)
 	for _, name := range names {
 		if strings.HasSuffix(name, file_extension) {
 			var src = readSource(origin, folder, name)
