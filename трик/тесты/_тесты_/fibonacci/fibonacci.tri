@@ -13,5 +13,5 @@
 }
 
 вход {
-    llvm.цел64(fibonacci sequence(50))
+    llvm.цел64(fibonacci sequence(10))
 }

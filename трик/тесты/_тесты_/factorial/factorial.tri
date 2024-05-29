@@ -1,25 +1,18 @@
 модуль factorial
 импорт "стд::llvm"
 
+
 вход {
-    пусть n : Цел64 := 100000
-    пусть mod : Цел64 := 1000000007
+    пусть n : Цел64 := 10
     пусть factorial : Цел64 := 1
-    пока истина {
+    пока (истина) {
         если n = 0 {
             прервать
         }
         иначе {
-            пусть m : Цел64 := n
-            factorial := 1
-            пока m > 0 {
-                factorial := factorial * m 
-                factorial := factorial % mod
-                m--
-            }
+            factorial := factorial * n 
             n--
         }
     }
-
     llvm.цел64(factorial)
 }
