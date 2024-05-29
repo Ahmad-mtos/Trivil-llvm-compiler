@@ -1,2 +1,2 @@
-copy libwelrt.* ..\_genc
-copy *.h ..\_genc
+copy libwelrt.* ..\_genllvm
+copy *.h ..\_genllvm

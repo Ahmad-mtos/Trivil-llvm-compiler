@@ -29,7 +29,7 @@ del /q trik.exe
 rem tric -exe=false трик
 echo строим трик компилятор...
 tric трик
-rem cd _genc
+rem cd _genllvm
 rem call build.bat
 rem cd ..
     

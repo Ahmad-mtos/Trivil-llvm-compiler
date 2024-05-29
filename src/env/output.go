@@ -12,7 +12,7 @@ var _ = fmt.Printf
 // Подготовка папку для записи кода
 func PrepareOutFolder() string {
 
-	name := "./_genc"
+	name := "./_genllvm"
 
 	err := os.Mkdir(name, 0750)
 	if err != nil && !os.IsExist(err) {
