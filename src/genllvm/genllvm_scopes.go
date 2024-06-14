@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+var printScope = false
+
 const (
     IntegerType = "i64"
     BooleanType = "i1"
@@ -49,6 +51,9 @@ func pushScope(scopeType int, startLabel string, endLabel string) {
 		EndLabel: endLabel,
 	}
 	TopScope = newScope
+	if printScope {
+		printScopeTree("\\", " " + numToScope(scopeType) + ":")
+	}
 }
 
 func terminateScope() {
@@ -85,23 +90,73 @@ func pushSTD() {
 
 
 func popScope() {
-	if TopScope.Outer == nil{
+	if printScope {
+		printScopeTree("/", "")
+	}
+	if TopScope == nil{
 		panic("Stack is empty.")
 	}
+
 	TopScope = TopScope.Outer
+
 }
 
 func addToScope(name string, data SymbolData) {
 	TopScope.Names[name] = data
+	if printScope {
+		suffix := " " + name + " " + data.Typ + " " + data.RegisterNum
+		printScopeTree("-", suffix)
+	}
+}
+
+func numToScope(scope int) string {
+	switch scope{
+	case GlobalScope:
+		return "Global Scope"
+	case FuncScope:
+		return "Function Scope"
+	case LoopScope:
+		return "Loop Scope"
+	case IfScope:
+		return "If Scope"
+	default:
+		return "Undefined Scope"
+	}
+}
+
+func printScopeTree(char string, suffix string) {
+	var prefix = ""
+	var cur = TopScope
+	var depth = 0
+	if char == "\\"{
+		depth--
+	}
+	for (cur != nil){
+		depth++
+		cur = cur.Outer
+	}
+	for depth > 0 {
+		prefix += "│   "
+		depth--
+	}
+	if char == "/"{
+		prefix += "└──────────────────"
+	} else {
+		prefix += "├──"
+	}
+	if printScope{
+		println(prefix + suffix)
+	}
 }
 
 func printScopes() {
 	var cur = TopScope
 	for cur != nil {
-		println(cur.ScopeType,":(", cur.Terminated,")")
+		println(numToScope(cur.ScopeType) + ":")
 		for key,name := range cur.Names{
 			println(key, name.RegisterNum, name.Typ)
 		}
+		println("-------------------\n")
 		cur = cur.Outer
 	}
 }

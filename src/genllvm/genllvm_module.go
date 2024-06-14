@@ -79,11 +79,16 @@ func (genc *genContext) genFunction(f *ast.Function) {
 		proccessedParams = genc.genParams(ft)
 		genc.registerCnt++
 		proccessedPostParams = genc.genPostParams(ft)
+	} else {
+		genc.registerCnt++
 	}
 	
 	genc.c("define dso_local %s %s(%s) #0 {", typ, name, proccessedParams)
 	genc.c("%s", proccessedPostParams)
 	genc.genStatementSeq(f.Seq)
+	if ft.ReturnTyp == nil{
+		genc.c("ret void")
+	}
 	popScope()
 	genc.c("}")
 

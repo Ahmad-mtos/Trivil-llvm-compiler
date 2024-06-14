@@ -55,6 +55,9 @@ func Generate(m *ast.Module, main bool) {
 
 	genllvm.genModule(main)
 	genllvm.finishCode()
+	if TopScope != nil{
+		popScope()
+	}
 
 	//genc.show()
 	genllvm.save()

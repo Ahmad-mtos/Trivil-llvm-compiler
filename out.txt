@@ -1,0 +1,386 @@
+.
+├── build_compiler.sh
+├── config
+│   ├── errors.txt
+│   ├── genc.txt
+│   └── genllvm.txt
+├── doc
+│   ├── 5-й элемент. Опыт разработки и реализации языка Тривиль.pdf
+│   ├── CONTRIBUTING.md
+│   ├── grammar.txt
+│   ├── report
+│   │   ├── 00-Оглавление.tex
+│   │   ├── 01-Назначение.tex
+│   │   ├── 02-Обзор.tex
+│   │   ├── 03-Лексика.tex
+│   │   ├── 04-Описания.tex
+│   │   ├── 05-Выражения.tex
+│   │   ├── 06-Операторы.tex
+│   │   ├── 07-СтдФункции.tex
+│   │   ├── 08-Модули.tex
+│   │   ├── 09-Обобщенные.tex
+│   │   ├── 10-Совместимость.tex
+│   │   ├── 11-Небезопасные.tex
+│   │   ├── report.pdf
+│   │   ├── report.tex
+│   │   ├── trivilreport.cls
+│   │   └── А1-Версии.tex
+│   ├── tri-notepad.xml
+│   └── Тривиль презентация апрель 2023.pdf
+├── factorial.exe
+├── fibonacci.exe
+├── _genc
+│   ├── build.sh
+│   ├── factorial.c
+│   ├── factorial.h
+│   ├── fibonacci.c
+│   ├── fibonacci.h
+│   ├── llvm.c
+│   └── llvm.h
+├── _genllvm
+│   ├── build.sh
+│   ├── factorial.ll
+│   ├── fibonacci.ll
+│   ├── llvm.ll
+│   ├── scope_demonstrator.ll
+│   └── simple.ll
+├── LICENSE.md
+├── out.txt
+├── README.md
+├── runtime
+│   ├── cp.bat
+│   ├── cp.sh
+│   ├── linux.txt
+│   ├── rt_api.c
+│   ├── rt_api.h
+│   ├── rt.bat
+│   ├── rt_defs.h
+│   ├── rt.sh
+│   ├── rt_sysapi.c
+│   ├── rt_sysapi.h
+│   ├── rt_syscrash_linux.c
+│   └── rt_syscrash_win.c
+├── scope_demonstrator.exe
+├── scripts
+│   ├── cleanup.bat
+│   └── install.bat
+├── simple.exe
+├── src
+│   ├── ast
+│   │   ├── ast.go
+│   │   ├── declarations.go
+│   │   ├── expressions.go
+│   │   ├── init.go
+│   │   ├── modifier.go
+│   │   ├── module.go
+│   │   ├── scope.go
+│   │   ├── sexpr.go
+│   │   ├── statements.go
+│   │   └── types.go
+│   ├── compiler
+│   │   ├── compile.go
+│   │   ├── defmod.go
+│   │   ├── import.go
+│   │   ├── parse.go
+│   │   ├── setup.go
+│   │   └── testing.go
+│   ├── env
+│   │   ├── errors.go
+│   │   ├── flags.go
+│   │   ├── folders.go
+│   │   ├── init.go
+│   │   ├── output.go
+│   │   └── source.go
+│   ├── genc
+│   │   ├── gen_build.go
+│   │   ├── gen_call.go
+│   │   ├── gen_conv.go
+│   │   ├── gen_expr.go
+│   │   ├── gen.go
+│   │   ├── gen_module.go
+│   │   ├── gen_names.go
+│   │   ├── gen_stmt.go
+│   │   └── gen_type.go
+│   ├── genllvm
+│   │   ├── genllvm_build.go
+│   │   ├── genllvm_call.go
+│   │   ├── genllvm_expr.go
+│   │   ├── genllvm.go
+│   │   ├── genllvm_module.go
+│   │   ├── genllvm_names.go
+│   │   ├── genllvm_scopes.go
+│   │   ├── genllvm_stmt.go
+│   │   └── genllvm_type.go
+│   ├── go.mod
+│   ├── lexer
+│   │   ├── lexer_def.go
+│   │   ├── lexer.go
+│   │   └── lexer_test.go
+│   ├── parser
+│   │   ├── parser_expr.go
+│   │   ├── parser_fn.go
+│   │   ├── parser.go
+│   │   ├── parser_stmt.go
+│   │   ├── parser_test.go
+│   │   ├── parser_trace.go
+│   │   └── parser_type.go
+│   ├── semantics
+│   │   ├── analysis.go
+│   │   ├── check
+│   │   │   ├── check_call.go
+│   │   │   ├── check_cast.go
+│   │   │   ├── check_composite.go
+│   │   │   ├── check_constexpr.go
+│   │   │   ├── check_conv.go
+│   │   │   ├── check_expr.go
+│   │   │   ├── check.go
+│   │   │   ├── check_test.go
+│   │   │   └── check_type.go
+│   │   └── lookup
+│   │       ├── lookup_expr.go
+│   │       ├── lookup.go
+│   │       ├── lookup_scopes.go
+│   │       ├── lookup_test.go
+│   │       └── lookup_type.go
+│   └── trivil.go
+├── tests
+│   ├── euclidean_gcd
+│   │   └── euclidean_gcd.tri
+│   ├── factorial
+│   │   └── factorial.tri
+│   ├── fibonacci
+│   │   └── fibonacci.tri
+│   └── scope_demonstrator
+│       └── scope_demonstrator.tri
+├── trivil_c
+├── trivil_llvm
+├── примеры
+│   ├── разные
+│   │   ├── class_conv_fail.tri
+│   │   ├── class_conv_ok.tri
+│   │   ├── classes.tri
+│   │   ├── factorial.tri
+│   │   ├── tagpairs.tri
+│   │   ├── variadic.tri
+│   │   ├── vector_max.tri
+│   │   ├── декодер.tri
+│   │   ├── комстрока.tri
+│   │   ├── поля.tri
+│   │   ├── привет.tri
+│   │   ├── разворачивание.tri
+│   │   ├── стек.tri
+│   │   ├── текст словаря.tri
+│   │   └── формат.tri
+│   ├── степ-1
+│   │   ├── привет.tri
+│   │   └── факториал.tri
+│   └── степ-2
+│       ├── ини
+│       │   └── ини.tri
+│       ├── может
+│       │   └── может.tri
+│       ├── оп-выбор
+│       │   └── оп-выбор.tri
+│       ├── оп-выбор-т
+│       │   └── оп-выбор-т.tri
+│       ├── оп-надо
+│       │   └── оп-надо.tri
+│       └── оп-цикл
+│           └── оп-цикл.tri
+├── проба
+│   ├── README.md
+│   └── рки
+│       ├── README.md
+│       ├── рк
+│       │   └── рк.tri
+│       ├── ркк
+│       │   ├── асм-бин
+│       │   │   ├── бин.tri
+│       │   │   └── разбор.tri
+│       │   └── ркк.tri
+│       ├── рк-настройка.txt
+│       └── р-коды
+│           └── опкоды.tri
+├── стд
+│   ├── llvm
+│   │   ├── вывод.def
+│   │   └── вывод.tri
+│   ├── все.tri
+│   ├── вывод
+│   │   ├── вывод.def
+│   │   └── вывод.tri
+│   ├── комстрока
+│   │   ├── аргументы.tri
+│   │   ├── комстрока.def
+│   │   ├── настройки.tri
+│   │   └── словарь.tri
+│   ├── контейнеры
+│   │   ├── словарь
+│   │   │   ├── словарь.tri
+│   │   │   ├── стр-стр
+│   │   │   │   ├── настройка.tri
+│   │   │   │   └── стр-стр.def
+│   │   │   └── _тест_
+│   │   │       └── тест.tri
+│   │   └── стек
+│   │       ├── стек.tri
+│   │       ├── стек-стр
+│   │       │   └── стекстр.tri
+│   │       └── стек-цел
+│   │           ├── стек-цел.def
+│   │           └── стекцел.tri
+│   ├── платформа
+│   │   ├── платформа.def
+│   │   └── платформа.tri
+│   ├── строки
+│   │   ├── внеш.tri
+│   │   ├── замена.tri
+│   │   ├── индексы.tri
+│   │   ├── сборщик.tri
+│   │   ├── строки.def
+│   │   ├── строковые.tri
+│   │   ├── _тест_
+│   │   │   ├── тест.tri
+│   │   │   ├── т-соединить.tri
+│   │   │   └── т-числа.tri
+│   │   ├── формат.tri
+│   │   └── числа.tri
+│   ├── тестирование
+│   │   ├── тест-вход
+│   │   │   └── вход.tri
+│   │   ├── тестер
+│   │   │   └── тестер.tri
+│   │   └── тест-основа
+│   │       ├── основа.tri
+│   │       └── тест-основа.def
+│   ├── файлы
+│   │   ├── внеш.tri
+│   │   ├── ошибки.tri
+│   │   ├── пути.tri
+│   │   ├── файлы.def
+│   │   └── файлы.tri
+│   ├── форматы
+│   │   └── json
+│   │       ├── json.def
+│   │       ├── определения.tri
+│   │       ├── разбор.tri
+│   │       └── сохранение.tri
+│   ├── хеши
+│   │   └── fnv
+│   │       ├── fnv.def
+│   │       └── fnv.tri
+│   └── юникод
+│       ├── utf8
+│       │   ├── utf8.def
+│       │   ├── декодер.tri
+│       │   ├── декодер-стр8.tri
+│       │   ├── проверки.tri
+│       │   └── сделать.tri
+│       ├── предикаты.tri
+│       └── юникод.def
+└── трик
+    ├── асд
+    │   ├── асд.tri
+    │   ├── асд-показ
+    │   │   ├── с-выражения.tri
+    │   │   ├── с-модуль.tri
+    │   │   ├── с-операторы.tri
+    │   │   ├── с-описания.tri
+    │   │   └── с-типы.tri
+    │   ├── выражения.tri
+    │   ├── модуль.tri
+    │   ├── области.tri
+    │   ├── области-словарь.tri
+    │   ├── операторы.tri
+    │   ├── описания.tri
+    │   ├── типы.tri
+    │   ├── типы-доп.tri
+    │   └── типы-ош.tri
+    ├── ген
+    │   ├── ар
+    │   │   └── ар-ген.tri
+    │   ├── ген.tri
+    │   └── си
+    │       ├── имена-описаний
+    │       │   └── настройка.tri
+    │       ├── перевод-имен
+    │       │   └── настройка.tri
+    │       ├── си-вызов.tri
+    │       ├── си-выражения.tri
+    │       ├── си-ген.tri
+    │       ├── си-запись.tri
+    │       ├── си-имена.tri
+    │       ├── си-операторы.tri
+    │       ├── си-преобразования.tri
+    │       ├── си-сборка.tri
+    │       ├── си-типы.tri
+    │       └── стр-лог
+    │           └── настройка.tri
+    ├── компилятор
+    │   ├── документация.tri
+    │   ├── импорт.tri
+    │   ├── компилятор.tri
+    │   ├── лексика.tri
+    │   ├── реплика.tri
+    │   ├── синтаксис.tri
+    │   ├── словарь-импорты
+    │   │   └── настройка.tri
+    │   ├── словарь-модули
+    │   │   └── настройка.tri
+    │   ├── словарь-состояние
+    │   │   └── настройка.tri
+    │   └── тесты.tri
+    ├── лексер
+    │   ├── ключевые-слова
+    │   │   └── настройка.tri
+    │   ├── лексемы.tri
+    │   └── лексер.tri
+    ├── основа
+    │   ├── исходник.tri
+    │   ├── настройки.tri
+    │   ├── ошибки.tri
+    │   ├── ош-сообщения
+    │   │   └── настройка.tri
+    │   ├── папки.tri
+    │   └── _тест_
+    │       └── т_ошибки.tri
+    ├── парсер
+    │   ├── парсер.tri
+    │   ├── парсер-выражение.tri
+    │   ├── парсер-операторы.tri
+    │   ├── парсер-отладка.tri
+    │   ├── парсер-ошибки.tri
+    │   ├── парсер-строки.tri
+    │   ├── парсер-типы.tri
+    │   ├── парсер-функция.tri
+    │   └── словарь.tri
+    ├── семантика
+    │   ├── имена
+    │   │   ├── им-выражения.tri
+    │   │   ├── имена.tri
+    │   │   ├── им-области.tri
+    │   │   ├── им-операторы.tri
+    │   │   └── им-типы.tri
+    │   ├── контроль
+    │   │   ├── кон-вызов.tri
+    │   │   ├── кон-выражения.tri
+    │   │   ├── кон-композиты.tri
+    │   │   ├── кон-конст.tri
+    │   │   ├── кон-операторы.tri
+    │   │   ├── кон-осторожное.tri
+    │   │   ├── кон-ошибки.tri
+    │   │   ├── кон-преобразования.tri
+    │   │   ├── кон-типы.tri
+    │   │   ├── контроль.tri
+    │   │   └── словарь-цел-цел
+    │   │       └── настройка.tri
+    │   ├── семантика.tri
+    │   └── словарь-описаний
+    │       └── настройка.tri
+    ├── тесты
+    │   ├── _тесты_
+    │   │   └── simple.tri
+    │   └── тесты.tri
+    └── трик.tri
+
+90 directories, 293 files

@@ -223,7 +223,7 @@ func (genc *genContext) genBinaryExpr(x *ast.BinaryExpr) string {
 
 	case lexer.EQ:
 		switch {
-		case ast.IsInt64(typ):
+		case ast.IsIntegerType(typ):
 			genc.c("%%%d = icmp eq i64 %s, %s", result, X, Y)
 		case ast.IsFloatType(typ):
 			genc.c("%%%d = fcmp eq double %s, %s", result, X, Y)
@@ -257,7 +257,7 @@ func (genc *genContext) genBinaryExpr(x *ast.BinaryExpr) string {
 
 	case lexer.NEQ:
 		switch {
-		case ast.IsInt64(typ):
+		case ast.IsIntegerType(typ):
 			genc.c("%%%d = icmp ne i64 %s, %s", result, X, Y)
 		case ast.IsFloatType(typ):
 			genc.c("%%%d = fcmp ne double %s, %s", result, X, Y)

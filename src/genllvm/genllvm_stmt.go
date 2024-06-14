@@ -165,7 +165,13 @@ func (genc *genContext) genIf(x *ast.If) {
 	var condExpr = genc.genExpr(x.Cond)
 	var exprTrue = genc.newLabel()
 	var exprFalse = genc.newLabel()
-	var restRegister = genc.newLabel()
+	var restRegister = ""
+
+	if x.Else != nil{
+		restRegister = genc.newLabel()
+	} else {
+		restRegister = exprFalse
+	}
 
 	pushScope(IfScope, "", restRegister)
 
@@ -176,12 +182,15 @@ func (genc *genContext) genIf(x *ast.If) {
 	genc.c("br label %%%s", restRegister)
 	popScope()
 
-	pushScope(IfScope, "", restRegister)
-
-	genc.c("%s:", exprFalse)
-	genc.genStatementSeq(x.Else.(*ast.StatementSeq))
-	genc.c("br label %%%s", restRegister)
-	popScope()
+	if x.Else != nil{
+		pushScope(IfScope, "", restRegister)
+		
+		genc.c("%s:", exprFalse)
+		genc.genStatementSeq(x.Else.(*ast.StatementSeq))
+		genc.c("br label %%%s", restRegister)
+		
+		popScope()
+	}
 
 	genc.c("%s:", restRegister)
 }

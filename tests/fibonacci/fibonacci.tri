@@ -1,0 +1,17 @@
+модуль fibonacci
+импорт "стд::llvm"
+
+фн fibonacci sequence(n : Цел64) : Цел64 {
+    пусть ret: Цел64 := 0
+    если n <= 1 {
+        ret := n
+    }
+    иначе {
+        ret := fibonacci sequence(n - 1) + fibonacci sequence (n - 2)
+    }
+    вернуть ret
+}
+
+вход {
+    fibonacci sequence(48)
+}
