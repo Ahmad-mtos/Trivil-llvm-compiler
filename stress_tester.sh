@@ -26,7 +26,7 @@ do
         mkdir -p $OUTPUT_FOLDER/size_$i/test_$j
         TEST_PATH=$OUTPUT_FOLDER/size_$i/test_$j/test_$j.tri
 
-        COMMAND="./trivil_c $TEST_PATH"
+        COMMAND="./trivil_llvm $TEST_PATH"
 
         REAL_TIME=$(get_real_time "$COMMAND")
 

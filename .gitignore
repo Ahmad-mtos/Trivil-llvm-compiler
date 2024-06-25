@@ -13,5 +13,4 @@ _си/*
 x.*
 *.tri!
 _totri.cfg
-trivil_c
-trivil_llvm
+trivil_*

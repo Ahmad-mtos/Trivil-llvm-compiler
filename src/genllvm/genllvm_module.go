@@ -161,34 +161,6 @@ const int x = 5
 scope[x] = 3
 alloca
 */
-// Обработка кода: конст к = функ
-func (genc *genContext) typeOfFunction(x ast.Expr) string {
-
-	checkFunctionRef(x)
-
-	var ft = ast.UnderType(x.GetType()).(*ast.FuncType)
-
-	var name = genc.localName("FT")
-
-	var ps = make([]string, len(ft.Params))
-
-	for i, p := range ft.Params {
-		if ast.IsVariadicType(p.Typ) {
-			ps[i] = "TInt64"
-			ps = append(ps, "void*")
-		} else {
-			ps[i] = genc.typeRef(p.Typ)
-		}
-	}
-
-	genc.g("typedef %s (*%s)(%s);",
-		genc.returnType(ft),
-		name,
-		strings.Join(ps, ", "))
-
-	return name
-}
-
 func checkFunctionRef(expr ast.Expr) {
 
 	switch x := expr.(type) {
